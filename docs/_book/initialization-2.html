@@ -254,7 +254,7 @@ wStackTop:: db
 
 <p class="seealso">Used in sections <a href="initialization-1.html#8:1">8:1</a> and <a href="game-mode.html#10:3">10:3</a></p>
 </div>
-<p>Now why would the stack be <code>$100</code>? Admittedly this is quite arbitrary, but there's a possibly good reason which you'll <a href="#8.1:8">see later</a>.
+<p>Now why would the stack be <code>$100</code> bytes long? Admittedly this is quite arbitrary, but there's a possibly good reason which you'll <a href="#8.1:8">see later</a>.
 </p>
 
 </div>
@@ -400,7 +400,7 @@ DisableLCD::
 <a name="8.1:8"><div class="section"><h4>8. Copy DMA code</h4></a>
 <p>This is needed for manipulating sprites, since it's not possible to manipulate OAM directly. Instead, let the Game Boy itself do it though a DMA transfer from RAM to OAM. During this time, the CPU cannot access anything other than HRAM, so to ensure the CPU can go back to the ROM safely, I need to place this code <em>inside</em> HRAM, and run it from there.
 </p>
-<p>This also means that I need to make room for a "virtual OAM" inside of WRAM. This is what we update from within the program, instead of using the OAM memory region directly.
+<p>This also means that I need to make room for a "virtual OAM" inside of WRAM. This is what I'll update from within the program, instead of using the OAM memory region directly.
 </p>
 
 <div class="codeblock">
