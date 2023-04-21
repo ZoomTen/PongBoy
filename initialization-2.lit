@@ -1,0 +1,222 @@
+@title Initializing hardware
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Save Game Boy type
+
+Right after the boot ROM hands over control to my program, the A register contains [different values](https://gbdev.io/pandocs/Power_Up_Sequence.html#cpu-registers) depending on which Game Boy (or rather, which boot ROM) is used. In case I want to have console-specific features in the future (for example, palettes or extended graphics on Game Boy Color), I'll store this to a variable.
+
+I'll place this variable in HRAM:
+
+--- HRAM definitions
+hGBType:: db
+---
+
+`db` is "define byte", used here as a shortcut for `ds 1`. `ds` itself (as you'll see in a bit) is&mdash;I think&mdash; "define space", basically a static allocation of some number of bytes. 
+
+<aside>
+`db`, when used in ROM, can be used to write raw data. e.g. `db 1, 2, $40` will write the bytes `01 02 40` literally into ROM. In RAM, it's equivalent to `ds 1`.
+</aside>
+
+And let this be the first thing done:
+
+--- Save the Game Boy type
+	ldh [hGBType], a
+---
+
+@s Clearing WRAM
+
+I'll clear WRAM by setting it to all zeroes.  This uses [FillMem16](helpers.html#6:1), which I defined earlier.
+
+I pointed HL to the start of WRAM, BC to the size of WRAM (simply subtract the start of WRAM from the start of Echo RAM), and A to 0.
+
+Ordinarily `ld a, 0` can be used to zero out `a`. But `xor a, a` (or simply `xor a`) has the same effect and is faster. It performs an exclusive OR between `a` and itself, resulting in 0 and stores the result back in `a`. Since the result is 0, it sets the Z flag&mdash;but I don't care about that right now.
+
+--- Clear RAM and place the stack pointer
+	xor a
+	ld hl, WRAM_START
+	ld bc, ECHO_START - WRAM_START
+	call FillMem16
+---
+
+
+@s Setting SP
+
+SP is the **s**tack **p**ointer. It points to an area in memory where registers are saved to and loaded from as the `push` and `pop` instructions are executed. As mentioned previously, it's first-in-last-out, just like a stack of plates. When pushed to, the register is stored where SP is, and SP decrements by two. The opposite happens when popped from: the register is retrieved from where SP was (without clearing it), and SP increments by two.
+
+At boot up, the top of the stack is initialized to `\$FFFE`. With this value, this cuts into HRAM space. I want to set the stack pointer somewhere in WRAM to give it some extra breathing space. [WRAM clearing](#8.1:2) uses the stack earlier (`call` is effectively `push pc`, conversely, `ret` being `pop pc`), which is why I did that first.
+
+I define the reserved space in WRAM:
+
+--- WRAM definitions
+wStack:: ds $100 - 1
+wStackTop:: db
+---
+
+Then set it in our init routine:
+
+--- Clear RAM and place the stack pointer +=
+	ld sp, wStackTop
+---
+
+Now why would the stack be `\$100`? Admittedly this is quite arbitrary, but there's a possibly good reason which you'll [see later](#8.1:8).
+
+@s Clearing HRAM
+
+Next, I clear out HRAM. I'll use [FillMem8](helpers.html#6:2) here, since the clearing range is quite small. It's the same as `FillMem16`, except the range is 8 bits, and set in C. I don't need to set A again, since that remains zero.
+
+I clear out one byte into HRAM, since the first byte is already occupied by the saved GB type.
+
+--- Clear RAM and place the stack pointer +=
+	ld hl, hGBType + 1
+	ld c, $ffff - (hGBType - 1)
+	call FillMem8
+---
+
+@s Turning off the screen
+
+Before I can do anything with the screen, I should disable it to ensure that I'm not changing it while it's being accessed. Updating the screen *can* be done while it's on, but since I'm in an init function, it's better to just disable the screen.
+
+I define a helper function `DisableLCD` here. All it does is wait for the current scanline number to be rendered to be out of bounds (waiting for line 145 to be hit), at which point the Game Boy will enter VBlank. After that, it's safe to disable the LCD controller, which I then do.
+
+This waiting has to be done because disabling the LCD outside of VBlank [may damage real hardware](https://gbdev.io/pandocs/LCDC.html#lcdc7--lcd-enable).
+
+--- DisableLCD
+;;--
+;; Turns off the screen
+;;
+;; @return [rLCDC] ~= LCD_ENABLE_BIT
+;;--
+DisableLCD::
+.wait
+	ld a, [rLY]
+	cp LY_VBLANK
+	jr nc, .disable ; >= LY_VBLANK? jump if yes
+	jr .wait        ; otherwise keep waiting
+.disable
+	ld a, [rLCDC]
+	res LCD_ENABLE_BIT, a ; disable LCD
+	ld [rLCDC], a
+	ret
+---
+
+--- Helper functions +=
+@{DisableLCD}
+---
+
+I then call it from the initialization routine.
+
+--- Turn off the screen
+	call DisableLCD
+---
+
+@s Reset the screen
+
+I clear the entirety of VRAM and reset every scroll register. At this point, A = 0.
+
+--- Reset the screen
+; zero out VRAM
+	ld hl, VRAM_START
+	ld bc, SRAM_START - VRAM_START
+	call FillMem16
+
+; reset scroll registers
+	ldh [rSCX], a
+	ldh [rSCY], a
+---
+
+I scroll the window down off-screen initially.
+
+--- Reset the screen +=
+; scroll the window register out
+	ld a, LY_VBLANK
+	ldh [rWY], a
+	ld a, 7
+	ldh [rWX], a
+---
+
+And I reset all [monochrome palettes](https://gbdev.io/pandocs/Palettes.html#ff47--bgp-non-cgb-mode-only-bg-palette-data) used by the Game Boy. The Game Boy follows a sort of reverse-format for palettes, and is an 8-bit value with the shades being 2 bits each. The normal palette as defined in binary is `11 10 01 00` (black, dark gray, light gray, white), which I'll use to set all 3 palettes used by the Game Boy.
+
+--- Reset the screen +=
+	ld a, %11100100
+	ldh [rBGP], a  ; background
+	ldh [rOBP0], a ; object palette 0
+	ldh [rOBP1], a ; object palette 1
+---
+
+@s Reset the audio subsystem
+
+I'll kill the audio circuitry by zeroing out `NR52`. This has the [bonus effect](https://gbdev.io/pandocs/Audio_Registers.html#ff26--nr52-sound-onoff) of *also* zeroing out all the audio registers. A is still 0 at this point.
+
+--- Reset audio
+	ldh [rNR52], a
+---
+
+@s Copy DMA code
+
+This is needed for manipulating sprites, since it's not possible to manipulate OAM directly. Instead, let the Game Boy itself do it though a DMA transfer from RAM to OAM. During this time, the CPU cannot access anything other than HRAM, so to ensure the CPU can go back to the ROM safely, I need to place this code *inside* HRAM, and run it from there.
+
+This also means that I need to make room for a "virtual OAM" inside of WRAM. This is what we update from within the program, instead of using the OAM memory region directly.
+
+--- WRAM definitions +=
+wVirtualOAM:: ds 4*MAX_SPRITES
+---
+
+<aside>
+Compiler quirks mean there's to be no spaces between operands here, while they seem to be accepted inside of instructions. It's weird, I know.
+</aside>
+
+Let's define `MAX_SPRITES` to make the code a bit more obvious:
+
+--- src/include/constants.inc +=
+MAX_SPRITES equ 40
+---
+
+With that, I can write the code that needs to be copied. Note that all this code does is wait until the DMA finishes doing its thing.
+
+--- DMARoutine
+DMARoutine::
+	ld a, wVirtualOAM // $1000000 ; HIGH(wVirtualOAM)
+	ldh [rDMA], a
+	ld a, MAX_SPRITES ; wait 4 * MAX_SPRITES cycles 
+.loop
+	dec a        ; 1 cycle
+	jr nz, .loop ; 3 cycles
+	ret
+DMARoutine_END::
+---
+--- Helper functions +=
+@{DMARoutine}
+---
+
+<aside>
+Yeah... <code>wVirtualOAM // \$1000000</code>? My fault for using ASMotor, I guess lol. (That, or there's a better way that I've not yet discovered.)
+</aside>
+
+I reserve some space in HRAM for the code:
+
+--- HRAM definitions +=
+hDMACode:: ds 10
+---
+
+Then the DMA code is copied there. This time, I'm not using the helper functions, since I want to make use of this particular instruction: `ld [$ff00+c], a`.
+
+--- Copy HRAM DMA code
+	ld hl, DMARoutine
+	ld b, DMARoutine_END - DMARoutine
+	ld c, hDMACode ~/ $ff ; LOW(hDMACode)
+.copy_code
+	ld a, [hl+]
+	ld [$ff00+c], a
+	inc c
+	dec b
+	jr nz, .copy_code
+---
+
+Because of the nature of `rDMA`, I have to ensure that `wVirtualOAM`'s *location* is a multiple of `\$100`. `wStack` ([as you saw earlier](#8.1:3)) comes before it, and the rather arbitrary size of `\$100` happens to fit nicely with this requirement.
+
+Now where would this code be run... how about once every frame? I can use the VBlank interrupt to call the code from the allocated space in HRAM:
+
+--- Contents of VBlank
+	call hDMACode
+---

@@ -1,0 +1,140 @@
+@title Handling scoring
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Giving players some points
+
+One way I can give points to the players is by doing it directly when the ball updates its position. So, I'll modify the ball physics code from before to make it call (or rather&mdash;jump to) a scoring function when it hits the edges of the screen.
+
+A point is earned for the left player when the ball goes out on the right half of the screen.
+
+--- Move the ball to the right +=
+; if new X >= (160+8), score one point towards the left player
+	ld a, [hl]
+	cp 160+8
+	jp nc, ScorePointsAndReset
+---
+
+Likewise, a point earned for the right player when the ball goes out on the left half.
+
+--- Move the ball to the left :=
+; forcibly clear flags, at this point A=0
+	and a  ; clear carry
+	rla    ; clear zero
+
+	dec [hl]
+	
+; if new X < 0, score one point towards the right player
+; set carry flag to mark the right player earns 1 point
+	jr nz, .apply_ball_y
+	scf
+	jp ScorePointsAndReset
+---
+
+I'll use the carry flag to differentiate between the two when going to scoring.
+
+@s The scoring function
+
+In addition to giving a player 1 point, I want to make it reset the game state so that the next round can begin cleanly.
+
+--- Score points and reset the game state
+;;--
+;; Score points and reset the game states.
+;; 
+;; @param Carry   if set, give 1 point to the right player.
+;;                otherwise, give 1 point to the left player.
+;;--
+ScorePointsAndReset::
+@{Determine if the score to be given is to the left player or the right}
+@{Reset the game state}
+
+.give_point
+@{Score points to the appropriate player}
+---
+
+I also want to make it so that the game switches who "serves" the ball. This value will be copied onto `wBallNextDirection` later.
+
+--- Constants +=
+; wWhichServe values (using wBallNextDirection)
+RIGHT_PLAYER_SERVES equ 0
+LEFT_PLAYER_SERVES  equ 1 << F_HORIZONTAL
+---
+
+--- WRAM definitions +=
+wWhichServe:: db
+---
+
+The target is determined by HL, which is set to the left player's score's address initially. When carry is set, it will be overwritten to that of the right player's. I'll also want to use this section to set the serving player to that opposite of the winner.
+
+--- Determine if the score to be given is to the left player or the right
+	ld hl, wLeftScore
+	jr nc, .left_player_won
+
+; right player won
+	ld hl, wRightScore
+	ld a, LEFT_PLAYER_SERVES
+	ld [wWhichServe], a
+	call .give_point
+	jr .got_player
+
+.left_player_won
+	ld a, RIGHT_PLAYER_SERVES
+	ld [wWhichServe], a
+	call .give_point
+
+.got_player
+---
+
+And then, reset the game for a new round.
+
+--- Reset the game state
+	call ResetGame
+	jp GameLoop
+---
+
+Since I'm using BCD for scoring, I'll be using the decimal adjust (`daa`) instruction. It relies on the correct flags being set in order to perform the adjustments, so I'm gonna have to reset the flags prior to incrementing it.
+
+--- Score points to the appropriate player
+	ld a, [hl]
+	and a  ; reset flags
+	inc a
+	daa
+	ld [hl], a
+	ret
+---
+
+@s Split off game resetting function
+
+As a consequence, the game initialization routine will have to be split off into its own function. This time, `wWhichServe` is considered here, and `wDeltaYFromPaddle` will also be reset.
+
+--- ResetGame
+ResetGame::
+	ld a, PADDLES_STARTING_Y
+	ld [wLeftPaddleY], a
+	ld [wRightPaddleY], a
+	
+	ld a, BALL_STARTING_X
+	ld [wBallX], a
+	
+	ld a, BALL_STARTING_Y
+	ld [wBallY], a
+	
+	ld a, [wWhichServe]
+	ld [wBallNextDirection], a
+	
+	xor a
+	ld [wDeltaYFromPaddle], a
+	
+	call SetupLeftPaddle
+	call SetupRightPaddle
+	jp SetupBall
+---
+
+--- Set up sprites and variables :=
+	call ResetGame
+---
+
+--- Helper functions +=
+@{Score points and reset the game state}
+@{ResetGame}
+---

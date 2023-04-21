@@ -1,0 +1,138 @@
+@title Handling game AI
+@overwrite_css style.css
+@comment_type ; %s
+
+@s The simplest possible AI
+
+As [mentioned earlier](handle-input.html#9.2:5), I reserved the right paddle handler routine to be controlled as the CPU opponent. Let's attempt to make its "thinking" routine.
+
+First, let's make a very simple one that just copies the position of the ball.
+
+--- Handle the right paddle :=
+.right_paddle
+@{Load the ball's current Y position}
+@{Set position boundaries}
+@{Set right paddle's Y position}
+---
+
+--- Load the ball's current Y position
+	ld a, [wBallY]
+---
+
+I also apply the boundary checks here.
+
+--- Set position boundaries
+; assumes A is the calculated paddle position
+	cp PADDLES_UPPER_BOUNDARY
+	jr c, .limit_upper
+	cp PADDLES_LOWER_BOUNDARY
+	jr nc, .limit_lower
+	jr .set_paddle_y
+.limit_upper
+	ld a, PADDLES_UPPER_BOUNDARY
+	jr .set_paddle_y
+.limit_lower
+	ld a, PADDLES_LOWER_BOUNDARY
+	;jr .set_paddle_y
+---
+
+--- Set right paddle's Y position
+.set_paddle_y
+	ld [wRightPaddleY], a
+---
+
+What this results in is a pretty unfair AI that *always* catches the ball. Let's just say you'll be having a hard time beating it.
+
+<figure>
+<video controls width="300">
+	<source type="video/mp4" src="../figures/s-2023-04-20_09.44.25.mp4">
+	<a href="../figures/s-2023-04-20_09.44.25.mp4">Video file</a>
+</video>
+</figure>
+
+@s Delayed AI
+
+Let's make it a bit fairer. How about having the paddle move only after a short while? Say, it should wait a couple of frames until it's able to move the paddle.
+
+I can do this by setting a single delay and then having a timer that decrements on every step. Then when the timer hits zero, the paddle can move and the timer can be reset again. I'm gonna need two extra variables:
+
+--- WRAM definitions +=
+wAIMovementDelay:: db
+wAISetDelay:: db
+---
+
+Next, the delay constant.
+
+--- Constants +=
+RIGHT_PADDLE_DELAY equ 1
+---
+
+I set this up in the intializer function.
+
+--- Set up sprites and variables +=
+	ld a, RIGHT_PADDLE_DELAY
+	ld [wAISetDelay], a
+---
+
+Next, let's rework the right paddle function.
+
+--- Handle the right paddle :=
+.right_paddle
+@{Determine if the right paddle can move or not}
+@{Only decrement the timer}
+
+.move_paddle
+@{Reset the timer}
+@{Move the right paddle relative to the ball}
+
+.check_boundaries
+@{Set position boundaries}
+@{Set right paddle's Y position}
+
+.skip_right_paddle
+---
+
+First up, I'll check the timer if it's run out. If so, I can try moving the right paddle.
+
+--- Determine if the right paddle can move or not
+	ld a, [wAIMovementDelay]
+	and a
+	jr z, .move_paddle
+---
+
+Otherwise, I'll just decrement the timer and skip trying to move it.
+
+--- Only decrement the timer
+	dec a
+	ld [wAIMovementDelay], a
+	jr .skip_right_paddle
+---
+
+If the timer *did* reach zero, it'll be reset to its initial value.
+
+--- Reset the timer
+	ld a, [wAISetDelay]
+	ld [wAIMovementDelay], a
+---
+
+And then move the paddle up or down depending on whether the ball is above the paddle or below the paddle.
+
+--- Move the right paddle relative to the ball
+	ld hl, wRightPaddleY
+	ld a, [wBallY]
+	cp [hl]
+	ld a, [hl]
+
+; if paddle is lower than ball, move up
+	jr c, .move_up
+
+; else, move down
+	inc a
+	jr .check_boundaries
+
+.move_up
+	dec a
+	; jr .check_boundaries
+---
+
+And there you have it, an AI you can beat. Well, there are quirks to be sorted out here, but it's alright I guess, even though this is more A than I.

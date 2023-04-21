@@ -1,0 +1,232 @@
+@title Initializing variables and sprites
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Initializing variables
+
+I'll define the variables that I think a typical Pong game can have. Here I assume that the paddles will not be able to move left and right&mdash;only up and down. So I'll store only the Y position of both paddles.
+
+--- WRAM definitions +=
+; paddle position
+wLeftPaddleY:: db
+wRightPaddleY:: db
+---
+
+Every Pong clone since about 1975 has got to have its own scorekeeping system, so I'll prepare those, too.
+
+--- WRAM definitions +=
+; score
+wLeftScore:: db
+wRightScore:: db
+---
+
+Then the position of the ball, for the physics and stuff.
+
+--- WRAM definitions +=
+; ball position
+wBallX:: db
+wBallY:: db
+---
+
+And then I'll fill all of them in... except the score, obviously. The paddles will have the same starting position, so I can use one constant for both.
+
+--- Constants
+PADDLES_STARTING_Y equ $40
+BALL_STARTING_X equ $54
+BALL_STARTING_Y equ $50
+---
+
+--- Set up sprites and variables
+	ld a, PADDLES_STARTING_Y
+	ld [wLeftPaddleY], a
+	ld [wRightPaddleY], a
+	
+	ld a, BALL_STARTING_X
+	ld [wBallX], a
+	
+	ld a, BALL_STARTING_Y
+	ld [wBallY], a
+---
+
+Next I'll place the objects on the screen, which I'll get to shortly.
+
+--- Set up sprites and variables +=
+	call SetupLeftPaddle
+	call SetupRightPaddle
+	call SetupBall
+---
+
+@s Setting up sprites
+
+I'm using a fixed allocation system for my sprites: 5 sprites each for the paddles and 1 sprite for the ball. So 11 sprites in total, all of them 8&times;8 sprites. Here's how it'll be laid out:
+
+<figure>
+<img src="../figures/vram2.svg">
+</figure>
+
+Given a starting Y position, the individual paddle sprites will be offset to the bottom by 8 pixels each (from the sprite above it) so as to form the complete paddle, while the ball stands on its own and can be moved freely.
+
+@s Initializing the left paddle
+
+To make things a little easier, let's have a shortcut to add sprites. It just places whatever is in A, B, C, D to the address pointed to by HL.
+
+--- AddSprite
+;;--
+;; Uses A, B, C, D to write to OAM.
+;; 
+;; @param HL   sprite starting position
+;; @param A    sprite's Y position
+;; @param B    sprite's X position
+;; @param C    sprite's tile
+;; @param D    sprite's flags
+;;--
+AddSprite::
+	ld [hl+], a
+	ld [hl], b
+	inc hl
+	ld [hl], c
+	inc hl
+	ld [hl], d
+	inc hl
+	ret
+---
+
+First up, something to put the left paddle sprite on screen. The left paddle will occupy sprite slots 0&ndash;4, so its starting slot is 0.
+
+--- Constants +=
+SPRITE_SLOT_LEFT_PADDLE equ 0
+---
+
+I want some space between the left side of the screen and the left paddle, just to make things nicer to look at. So here's the starting X position.
+
+--- Constants +=
+LEFT_PADDLE_X equ 16
+---
+
+The compiler trick explained previously, but this time I'm using it to say which sprite slot I want to start in.
+
+--- Constants +=
+sprite equs "+ 4*"
+---
+
+You can see it in action here, where `wVirtualOAM sprite SPRITE_SLOT_LEFT_PADDLE` really just compiles to `wVirtualOAM + 4*0`.
+
+--- SetupLeftPaddle
+SetupLeftPaddle::
+	ld hl, wVirtualOAM sprite SPRITE_SLOT_LEFT_PADDLE
+	ld d, 0  ; flags
+	ld b, LEFT_PADDLE_X  ; X position
+	ld c, 8  ; tile (top of paddle)
+---
+
+As established earlier, I can't put sprites directly into OAM memory, which is why `wVirtualOAM` is used instead.
+
+I'll set up the first sprite of the paddle...
+
+--- SetupLeftPaddle +=
+; first sprite
+	ld a, [wLeftPaddleY]
+	call AddSprite
+---
+
+Then the next sprites will be added downwards of 8 pixels at a time.
+
+--- SetupLeftPaddle +=
+; second sprite
+	ld c, 1  ; set tile to the mid-paddle one
+	add a, 8
+	call AddSprite
+
+; third sprite
+	add a, 8
+	call AddSprite
+
+; fourth sprite
+	add a, 8
+	call AddSprite
+
+; final sprite
+	ld c, 9  ; bottom of paddle
+	add a, 8
+---
+
+Finally, I use `jp` here. It's better to use it than having a `call` then a `ret`, since this is a subroutine called from somewhere else.
+
+--- SetupLeftPaddle +=
+; fall through
+	jp AddSprite
+---
+
+@s Initializing the right paddle
+
+Same as before, but the right paddle will occupy sprite slots 5&ndash;9.
+
+--- Constants +=
+SPRITE_SLOT_RIGHT_PADDLE equ 5
+---
+
+I'll set this to 8 pixels away from the right edge of the screen.
+
+--- Constants +=
+RIGHT_PADDLE_X equ 160-8
+---
+
+And then the similar-looking code.
+
+--- SetupRightPaddle
+SetupRightPaddle::
+	ld hl, wVirtualOAM sprite SPRITE_SLOT_RIGHT_PADDLE
+	ld d, 0  ; flags
+	ld b, RIGHT_PADDLE_X  ; X position
+	ld c, 8  ; tile
+; first sprite
+	ld a, [wRightPaddleY]
+	call AddSprite
+; second sprite
+	ld c, 1
+	add a, 8
+	call AddSprite
+; third sprite
+	add a, 8
+	call AddSprite
+; fourth sprite
+	add a, 8
+	call AddSprite
+; fifth sprite
+	ld c, 9
+	add a, 8
+; fall through
+	jp AddSprite
+---
+
+@s Initializing the ball
+
+The ball will occupy sprite slot 10. Since the ball is only one sprite, this is a simpler subroutine.
+
+--- Constants +=
+SPRITE_SLOT_BALL equ 10
+---
+
+Basically just a call to AddSprite, nothing more.
+
+--- SetupBall
+SetupBall::
+	ld hl, wVirtualOAM sprite SPRITE_SLOT_BALL
+	ld a, [wBallX]
+	ld b, a
+	ld a, [wBallY]
+	ld c, 2
+	ld d, 0
+	jp AddSprite
+---
+
+@s Add functions to ROM
+
+Let's add the helpers I defined here...
+
+--- Helper functions +=
+@{AddSprite}
+@{SetupLeftPaddle}
+@{SetupRightPaddle}
+@{SetupBall}
+---

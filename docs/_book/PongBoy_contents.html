@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+ul#contents {list-style-type: none;}a{color:#337ABF;}body{min-width:200px;max-width:850px;margin:0 auto;padding:30px;}.chapter-nav{font-size: 10pt;}.codeblock_name,code,pre.prettyprint{font-family:Monaco,"Lucida Console",monospace}body{font-size:14pt}.codeblock_name,.math,.seealso,code{font-size:10pt}.codeblock{page-break-inside:avoid;padding-bottom:15px}.math{text-indent:0}pre.prettyprint{font-size:10pt;padding:10px;border-radius:10px;border:none;white-space:pre-wrap}.codeblock_name{margin-top:1.25em;display:block}a:link{text-decoration:none}a:link:not(.lit):hover{text-decoration:underline}a:link:active{color:red}h4{padding-right:1.25em}h4.noheading{margin-bottom:0}h1{text-align:center}code{padding:2px}pre{-moz-tab-size:4;-o-tab-size:4;tab-size:4}.two-col{list-style-type:none}.two-col li:before{content:'-';padding:5px;margin-right:5px;color:orange;background-color:#fff;display:inline-block}@media print{body{font-size:10pt}pre.prettyprint{font-size:8pt}.seealso{font-size:9pt}.codeblock_name,.math,code{font-size:8pt}.math{text-indent:0}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>PongBoy</h1>
+<p><figure>
+<img class="pixelated" alt="A Bad Pong Clone, press Start" src="../screens/pong-0.png">
+<img class="pixelated" alt="A game of Pong. Left side has a score of 10, right side has a score of 9." src="../screens/pong-1.png">
+</figure>
+</p>
+<p>This is a simple Pong clone for the Game Boy written in its native assembly language. The program is written in a sort of "guide" style using tools for what's known as "literate programming", specifically <a href="https://github.com/zyedidia/Literate">Zach Yedidia's Literate tool</a>.
+</p>
+<p>Despite that, decisions here are made ad-hoc (aka "I'm winging it") and you will see me explaining bad design choices and use questionable choice of words, so it might not even be fit for an actual "tutorial". Furthermore, I was gonna use "we" as it might be usual to see in guides, but seeing how not very good this is I decided to just use a straight-up first-person perspective ("I").
+</p>
+<p>That being said, hope you find it useful somehow. Also, feel free to <a href="https://github.com/zoomten/PongBoy">rip it to shreds</a>.
+</p>
+
+<ul id="contents">
+<li>1. <a href="intro-and-rom-layout.html">Introduction and Source Layout</a></li>
+<li>2. <a href="includes.html">Includes</a></li>
+<li>3. <a href="vectors.html">Hardware jump vectors</a></li>
+<li>4. <a href="header.html">Header and entry point</a></li>
+<li>5. <a href="program-layout.html">Program layout</a></li>
+<li>6. <a href="helpers.html">A few helper functions to start</a></li>
+<li>7. <a href="vblank.html">VBlank</a></li>
+<li>8. <a href="initialization-1.html">Initialization</a></li>
+<li>8.1. <a href="initialization-2.html">Initializing hardware</a></li>
+<li>8.2. <a href="initialization-3.html">Initializing the graphics</a></li>
+<li>8.3. <a href="initialization-4.html">Initializing variables and sprites</a></li>
+<li>8.4. <a href="initialization-5.html">Finishing initialization</a></li>
+<li>9. <a href="main-loop.html">Main game loop</a></li>
+<li>9.1. <a href="update-screen.html">Updating the screen</a></li>
+<li>9.2. <a href="vis-1.html">First visuals</a></li>
+<li>9.3. <a href="handle-input.html">Handling game input</a></li>
+<li>9.4. <a href="handle-physics.html">Handling game physics</a></li>
+<li>9.5. <a href="handle-scoring.html">Handling scoring</a></li>
+<li>9.6. <a href="handle-ai.html">Handling game AI</a></li>
+<li>9.7. <a href="vis-2.html">First proof of concept</a></li>
+<li>10. <a href="game-mode.html">Adding support for game modes</a></li>
+<li>10.1. <a href="title-screen.html">Adding a title screen</a></li>
+<li>10.2. <a href="fade-on-entry.html">Fading the screen in and out</a></li>
+<li>11. <a href="future-work.html">Results and possible future work</a></li>
+<li>12. <a href="makefile.html">Appendix: Makefile</a></li>
+<li>13. <a href="hwconst.html">Appendix: Hardware constants</a></li>
+
+</ul>
+</div>
+</body>
+

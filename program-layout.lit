@@ -1,0 +1,13 @@
+@title Program layout
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Main program layout
+After the header, I can now get to work on the actual game. The code will start at address `\$150`. 
+First, it'll run the initialization code. The game loop can start immediately after initialization. Afterwards, I'll place the helper functions. Those can actually be placed anywhere, but I want to place them after the "main" routines.
+
+--- Main program
+@{Initialization code}
+@{Game loop code}
+@{Helper functions}
+---

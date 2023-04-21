@@ -1,0 +1,119 @@
+@title Appendix: Makefile
+@overwrite_css style.css
+@comment_type # %s
+
+@s Makefile
+
+This Makefile is basically the commands "recipe" needed to build the ROM out of the provided source code. It's made up of variables (for configuration) and rules. Rules are made of targets, prerequisites, and the actual commands. Targets and prerequisites can either be files or just plain names, in which case they should be marked as "phony".
+
+The format used here is for [GNU Make](https://www.gnu.org/software/make/).
+
+Normally, the file is simply titled literally `Makefile` (with no file extension), however due to the limitations of the markup system, I have to use a file extension. Make might not pick this up right away, so you should run `make -f Makefile.mk`. 
+
+--- src/Makefile.mk
+@{Phony targets}
+@{Tool configuration}
+@{List of files to generate}
+@{Build configuration}
+@{Targets}
+---
+
+@s Configuration
+
+Here, I define which tools are to be used in building the ROM along with its compiler flags. This one defines where the ASMotor Z80 compiler is to be found&mdash;I set it to have the contents of the `ASMDIR` variable prepended should it be defined, otherwise it'll find it normally (using the system's `PATH`).
+
+--- Tool configuration
+ASM := $(ASMDIR)motorz80
+ASMFLAGS := -z00 -v
+---
+
+This one sets where SuperFamiConv is to be found.
+
+--- Tool configuration +=
+SFC := $(SFCDIR)superfamiconv
+---
+
+And this one should point to the XLink linker (included with ASMotor).
+
+--- Tool configuration +=
+LINK := xlink
+LINKFLAGS :=
+---
+
+I'll define a variable for the ROM's file name here.
+
+--- Build configuration
+ROM_NAME := pong
+---
+
+@s Targets
+
+I'll use these variables in the build process to let Make know what files I want to generate.
+
+--- List of files to generate
+OBJ_FILES := pong.o
+
+GFX_FILES := \
+	gfx/game.2bpp \
+	gfx/numbers.2bpp \
+	gfx/title-screen.2bpp \
+	gfx/title-screen.map
+---
+
+Here's the first target I'll be writing. `\$(ROM_NAME).gb` evaluates to `pong.gb` since I set it to that earlier. It will depend on whatever file is listed in `GFX_FILES`, `OBJ_FILES`, as well as every file in the `include/` folder. If any of them not exist or is newer than `pong.gb` (the target), Make will run the commands here again.
+
+The command itself invokes the linker I defined previously, along with the configured link flags and `-fngb -cngb` for specifying that I'll be compiling with the Game Boy ROM configuration.
+
+I'll also be generating a """"symfile"""" (which it calls map files) with the same name as the ROM, will be outputting the target file (what the `\$@` means) using whatever files are defined in `OBJ_FILES`
+
+--- Targets +=
+$(ROM_NAME).gb: $(GFX_FILES) $(OBJ_FILES) include/*
+	$(LINK) $(LINKFLAGS) -fngb -cngb -m$(ROM_NAME).sym -o$@ $(OBJ_FILES)
+---
+
+Here's a rule for anything ending in `.o` telling it to compile them from files of the same name that end in `.asm`. The `\$<` here means "the first prerequisite", which, in this case, is just its corresponding `.asm` file. `OBJ_FILES` matches this rule, so it'll run this rule for everything in `OBJ_FILES`.
+
+--- Targets +=
+%.o: %.asm
+	$(ASM) $(ASMFLAGS) -mcg -o$@ $<
+---
+
+Likewise for 2bpp graphics files, which uses SuperFamiConv...
+
+--- Targets +=
+%.2bpp: %.png
+	$(SFC) tiles -M gb -R -i $< -d $@
+---
+
+As well as the background tile map files.
+
+--- Targets +=
+%.map: %.png
+	$(SFC) -M gb -i $< -m $@
+---
+
+@s Maintenance targets
+
+This "all" target is what gets run when just invoking `make`, because this target is at the top of the file.
+
+--- Targets
+all: $(ROM_NAME).gb
+---
+
+I'll define some cleanup targets, too. `clean` removes every build artifact, while `tidy` removes only the ones used for building and debugging.
+
+--- Targets +=
+tidy:
+	rm -fv $(OBJ_FILES) $(GFX_FILES) *.sym *.sav
+
+clean: tidy
+	rm -fv *.gb
+---
+
+@s Phony targets
+
+By default, targets and prerequisites represent actual files. "Phony" targets are targets that should not represent a file. This is used to prevent, say, `make clean` refusing to run when there's a file literally called `clean`. For this, I'll declare the targets in the previous section as being "phony" targets.
+
+--- Phony targets
+.PHONY: all tidy clean
+---

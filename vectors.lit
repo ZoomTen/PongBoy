@@ -1,0 +1,121 @@
+@title Hardware jump vectors
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Vectors
+
+As is explained before, the jump vectors consist of `rst` jump vectors and interrupt jump vectors:
+
+--- Jump vectors
+@{Rst vectors}
+@{Interrupt vectors}
+---
+
+@s Rst
+
+First, the jump points for the `rst` instructions.
+
+--- Rst vectors
+	section "rst00", HOME[0]
+	@{Rst00 vector}
+	
+	section "rst08", HOME[8]
+	@{Rst08 vector}
+	
+	section "rst10", HOME[$10]
+	@{Rst10 vector}
+	
+	section "rst18", HOME[$18]
+	@{Rst18 vector}
+	
+	section "rst20", HOME[$20]
+	@{Rst20 vector}
+	
+	section "rst28", HOME[$28]
+	@{Rst28 vector}
+	
+	section "rst30", HOME[$30]
+	@{Rst30 vector}
+	
+	section "rst38", HOME[$38]
+	@{Rst38 vector}
+---
+
+For now, I'll leave them unused.
+
+When the `rst` instruction is invoked, it'll actually do a `call`, so I'll place a `ret` instruction on these to make it immediately go back to wherever it's called from.
+
+--- Rst00 vector
+ret
+---
+
+--- Rst08 vector
+ret
+---
+
+--- Rst10 vector
+ret
+---
+
+--- Rst18 vector
+ret
+---
+
+--- Rst20 vector
+ret
+---
+
+--- Rst28 vector
+ret
+---
+
+--- Rst30 vector
+ret
+---
+
+--- Rst38 vector
+ret
+---
+
+@s Interrupts
+
+Then, the interrupt vectors.
+
+--- Interrupt vectors
+	section "int_vblank", HOME[$40]
+	@{VBlank interrupt vector}
+	
+	section "int_hblank", HOME[$48]
+	@{HBlank interrupt vector}
+	
+	section "int_timer", HOME[$50]
+	@{Timer interrupt vector}
+	
+	section "int_serial", HOME[$58]
+	@{Serial interrupt vector}
+	
+	section "int_joypad", HOME[$60]
+	@{Joypad interrupt vector}
+---
+
+I'll blank these out for now, as well. This time, we use `reti` to acknowledge that we're returning from an interrupt call.
+
+--- VBlank interrupt vector
+reti
+---
+
+--- HBlank interrupt vector
+reti
+---
+
+--- Timer interrupt vector
+reti
+---
+
+--- Serial interrupt vector
+reti
+---
+
+--- Joypad interrupt vector
+reti
+---

@@ -1,0 +1,17 @@
+@title Object structs
+@overwrite_css style.css
+@comment_type ; %s
+
+@s 
+--- Macros +=
+object_struct: macro
+\1_ID:: db
+\1_Sprite:: db
+\1_Y:: db
+\1_X:: db
+	endm
+---
+
+--- WRAM definitions +=
+wObject1:: object_struct wObject1
+---

@@ -1,0 +1,18 @@
+@title First proof of concept
+@overwrite_css style.css
+@comment_type ; %s
+
+@s First proof of concept
+
+With that, I've got the first version that's "playable". Kinda. For the most part, the basic parts of the game works as expected:
+* Controlling the left paddle with the d-pad
+* Scoring and beginning a new round
+* Ball physics
+* CPU player moving the right paddle
+
+<figure>
+<video controls width="300">
+	<source type="video/mp4" src="../figures/s-2023-04-20_10.01.31.mp4">
+	<a href="../figures/s-2023-04-20_10.01.31.mp4">Video file</a>
+</video>
+</figure>

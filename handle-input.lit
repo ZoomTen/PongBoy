@@ -1,0 +1,237 @@
+@title Handling game input
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Input handling
+
+The player's controller should be able to control the paddles. My plan here is to have the player control the left paddle, while the right paddle is a CPU opponent.
+
+So I'll build the input handling routine thus:
+
+--- Handle joypad input
+@{Handle the left paddle}
+@{Handle the right paddle}
+---
+
+@s Joypad routine
+
+I'll need a way to read the Game Boy's button inputs and store them somewhere to be referred later. I'll place the destination address to HRAM:
+
+--- HRAM definitions +=
+hInput:: db
+---
+
+And an outline of the function to be written:
+
+--- ReadJoypad
+ReadJoypad::
+	@{Read d-pad input and store}
+	@{Read button input and store}
+	@{Reset the joypad register}
+	ret
+---
+
+--- Helper functions +=
+@{ReadJoypad}
+---
+
+The d-pad input and button input are treated separately by `rJOYP`, as can be seen [from the docs](https://gbdev.io/pandocs/Joypad_Input.html).
+
+The explanation says writing 0 to P14/P15 will select the appropriate button set, but really is writing a 1 into *the opposite* of the selected button set.
+
+So I make flag constants to reflect this.
+
+--- Constants +=
+F_rJOYP_SELECT_NOT_DPAD    equ 4
+F_rJOYP_SELECT_NOT_BUTTONS equ 5
+----
+
+First I select the d-pad (that is to say, "not buttons"). It sets up this register to listen for d-pad inputs.
+
+--- Read d-pad input and store
+ld a, 1 << F_rJOYP_SELECT_NOT_BUTTONS
+ldh [rJOYP], a
+---
+
+Then I read the input several times, because analog controls are funny. This allows the inputs to stabilize.
+
+--- Read d-pad input and store +=
+rept 4
+ldh a, [rJOYP]
+endr
+---
+
+The result is stored where everything is 1 except the bits for which the corresponding buttons were set. I want to see a 1 where the button is pressed, so I inverted the result, grabbed only the lower half and swapping it with the upper half, then store temporarily.
+
+--- Read d-pad input and store +=
+cpl       ; flip all the bits
+and %1111 ; get only lower half
+swap a    ; make it the upper half
+ld b, a   ; store to b
+---
+
+Doing the same to the button inputs.
+
+--- Read button input and store
+ld a, 1 << F_rJOYP_SELECT_NOT_DPAD
+ldh [rJOYP], a
+rept 4
+ldh a, [rJOYP]
+endr
+---
+
+This time, I get to OR it with the value I saved earlier.
+
+--- Read button input and store +=
+cpl              ; flip all the bits
+and %1111        ; get only lower half
+or b             ; merge with the d-pad input earlier
+ldh [hInput], a  ; save
+---
+
+I don't need to manipulate the joypad anymore, so I'll try resetting rJOYP.
+
+--- Reset the joypad register
+ld a, 1 << F_rJOYP_SELECT_NOT_BUTTONS | (1 << F_rJOYP_SELECT_NOT_DPAD)
+ldh [rJOYP], a
+---
+
+@s Define joypad constants
+
+The subroutine above places the d-pad set in the upper half (bits 4-7), and the buttons set in the lower half (bits 0-3). `hInput` can be checked with e.g. the `bit <N>, a` instruction to see if a certain button is pressed. Let's define the button flag numbers here:
+
+--- Constants +=
+BUTTONF_A      equ 0
+BUTTONF_B      equ 1
+BUTTONF_SELECT equ 2
+BUTTONF_START  equ 3
+BUTTONF_RIGHT  equ 4
+BUTTONF_LEFT   equ 5
+BUTTONF_UP     equ 6
+BUTTONF_DOWN   equ 7
+---
+
+Just in case I'll want to check a specific button combination, I'll define its numerical equivalents as well:
+
+--- Constants +=
+BUTTON_A      equ 1<<BUTTONF_A
+BUTTON_B      equ 1<<BUTTONF_B
+BUTTON_SELECT equ 1<<BUTTONF_SELECT
+BUTTON_START  equ 1<<BUTTONF_START
+BUTTON_RIGHT  equ 1<<BUTTONF_RIGHT
+BUTTON_LEFT   equ 1<<BUTTONF_LEFT
+BUTTON_UP     equ 1<<BUTTONF_UP
+BUTTON_DOWN   equ 1<<BUTTONF_DOWN
+---
+
+@s Handle the left paddle
+
+Pong controls are simple&mdash;move paddles up and down. Since this will be run once every frame, I check the joypad via the routine from earlier and then jump depending whether the up or down button is pressed. I'm using a compare here because I want to check if *only* up or *only* down is pressed, but not both (even though that will resolve to "up" anyway, since up is processed first).
+
+This section could be read as having early `ret`, except the `ret` is replaced with a jump to the next section of the code here.
+
+--- Handle the left paddle
+.left_paddle
+	call ReadJoypad
+	ldh a, [hInput]
+	jr z, .left_paddle_done
+	
+	cp BUTTON_UP
+	jr z, .up
+	
+	cp BUTTON_DOWN
+	jr z, .down
+	
+	jr .left_paddle_done
+
+.up
+@{Move the left paddle up}
+
+.down
+@{Move the left paddle down}
+
+.left_paddle_done
+---
+
+I define some constants for the paddle's speed (this is currently static; used in the `rept` directive), and the upper and lower boundaries where the paddle can't move any further.
+
+--- Constants +=
+; this is a static constant
+PADDLE_SPEED equ 2
+
+; Y boundaries
+PADDLES_UPPER_BOUNDARY equ $18
+PADDLES_LOWER_BOUNDARY equ $70
+---
+
+Moving the paddle up is basically decrementing `wLeftPaddleY` (since the value encodes how far *down* the screen it is) with a check to cap it at the desired boundaries.
+
+--- Move the left paddle up
+	ld a, [wLeftPaddleY]
+
+	rept PADDLE_SPEED
+	dec a
+	endr
+	
+	cp PADDLES_UPPER_BOUNDARY
+	jr nc, .apply_up
+
+; cap position
+	ld a, PADDLES_UPPER_BOUNDARY
+
+.apply_up
+	ld [wLeftPaddleY], a
+	jr .left_paddle_done
+---
+
+Same with moving it down, except it increments instead.
+
+--- Move the left paddle down
+	ld a, [wLeftPaddleY]
+	
+	rept PADDLE_SPEED
+	inc a
+	endr
+	
+	cp PADDLES_LOWER_BOUNDARY
+	jr c, .apply_down
+
+; cap position
+	ld a, PADDLES_LOWER_BOUNDARY
+
+.apply_down
+	ld [wLeftPaddleY], a
+	jr .left_paddle_done
+---
+
+
+@s Handle the right paddle
+
+Since the right paddle isn't going to be controlled by the player, I'll leave this empty for now.
+
+--- Handle the right paddle
+.right_paddle
+---
+
+@s Split into subroutines
+
+Okay, so it turns out that I might want to split these into subroutines, after all. Sure, splitting it and then `call`ing them is a bit slower than just placing the code directly, but it helps with readability.
+
+--- Handle joypad input :=
+	call HandleLeftPaddleInput
+	call HandleRightPaddleInput
+---
+
+Remember when I said about early `ret` earlier in this page? I turned it into a real-deal early `ret`:
+
+--- Helper functions +=
+HandleLeftPaddleInput::
+@{Handle the left paddle}
+	ret
+
+HandleRightPaddleInput::
+@{Handle the right paddle}
+	ret
+---
+
+Effectively, this means the `jr z, .done` instructions (and similar) within those functions can be optimized away to a `ret z`. But I'm not doing that here, because this markup system as it is would make me rewrite entire sections for that...

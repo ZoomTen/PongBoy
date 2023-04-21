@@ -1,0 +1,38 @@
+@title Finishing initialization
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Turn on the screen
+
+Finally, I'll turn on the screen, since I'm just about done loading everything. I'll define `EnableLCD` to have a sort of "preset" for the entire game.
+
+I chose to have the tileset at `\$8000` and the tilemap at `\$9800`.
+
+--- EnableLCD
+EnableLCD::
+	ld a, LCD_ENABLE | LCD_SET_8000 | LCD_MAP_9800 | LCD_OBJ_NORM | LCD_OBJ_ENABLE | LCD_BG_ENABLE
+	ldh [rLCDC], a
+	ret
+---
+--- Helper functions +=
+@{EnableLCD}
+---
+
+Then it's one `call` away.
+
+--- Turn on screen
+	call EnableLCD
+---
+
+@s Enable interrupts
+
+Here I enable interrupts, but choosing specifically which interrupt to enable. In this case, only the VBlank interrupt.
+
+--- Enable the interrupts again
+; set the interrupt to enable
+	ld a, 1 << VBLANK
+	ldh [rIE], a
+
+; enable them
+	ei
+---

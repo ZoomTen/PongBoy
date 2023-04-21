@@ -1,0 +1,18 @@
+@title Main game loop
+@overwrite_css style.css
+@comment_type ; %s
+
+@s Game loop outline
+
+Now that everything is set up, it's time to get into the actual game. The flow here is processing input first, and then acting based on the received inputs.
+
+--- Game loop code
+GameLoop::
+@{Handle joypad input}
+@{Handle ball physics}
+@{Update screen}
+@{Wait one frame}
+	jp GameLoop
+---
+
+I wait for one frame to pass first (so as to run the loop once per frame), and then return to the start of the loop. If I didn't wait a frame first, then the loop would run like a billion times per frame and be actually unplayable, which isn't what I want.

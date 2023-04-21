@@ -1,0 +1,119 @@
+@title A few helper functions to start
+@overwrite_css style.css
+@comment_type ; %s
+
+@s 16-bit memory fill
+
+I'll first define a couple of generic memory-filling functions here.
+
+This one operates on a 16-bit length. It puts the value of A to the memory address pointed to by HL, increments HL, then repeats until the desired length is reached.
+
+--- FillMem16
+;;--
+;; Fill memory with HL continuously with A
+;; for BC bytes
+;;
+;; @param A    value for fill
+;; @param HL   start address
+;; @param BC   how many bytes
+;;
+;; @return A   same
+;; @return HL  HL + BC + 1
+;; @return BC  0000
+;;--
+FillMem16::
+	dec bc
+	inc b
+	inc c
+.loop
+	ld [hl+], a
+	dec c
+	jr nz, .loop
+	dec b
+	ret z
+	jr .loop
+---
+
+To use this function, I'll need to first set up its parameters by loading the appropriate registers with the correct values. Then I simply `call FillMem16`.
+
+--- Example
+	ld a, 0
+	ld hl, StartAddress
+	ld bc, $1000
+	call FillMem16
+---
+
+I'll add it to the list of helper functions.
+
+--- Helper functions
+@{FillMem16}
+---
+
+@s 8-bit memory fill
+
+This one is the same as above, but operates on an 8-bit length instead. Instead of BC, this one uses only the C register.
+
+--- FillMem8
+;;--
+;; Fill memory with HL with A continuously for
+;; C bytes
+;;
+;; @param A    value for fill
+;; @param HL   start address
+;; @param C    how many bytes
+;;
+;; @return A   same
+;; @return HL  HL + C + 1
+;; @return C   0
+;;--
+FillMem8::
+.loop
+	ld [hl+], a
+	dec c
+	jr nz, .loop
+	ret
+---
+
+Adding this one too.
+
+--- Helper functions +=
+@{FillMem8}
+---
+
+Next up is the memory copying functions...
+
+@s 16-bit memory copy
+
+Not only HL can be used for indirect memory addressing. BC and DE can be used as well. Although I can't also decrement and increment in one go&mdash;that would still need to be done through separate instructions.
+
+--- CopyMem16
+;;--
+;; Copies a portion of memory from DE to HL for
+;; BC bytes.
+;;
+;; @param HL   destination start address
+;; @param DE   source start address
+;; @param BC   how many bytes
+;;
+;; @return A   Byte in (DE + BC)
+;; @return HL  HL + BC + 1
+;; @return BC  0000
+;;--
+CopyMem16::
+	dec bc
+	inc b
+	inc c
+.loop
+	ld a, [de]
+	inc de
+	ld [hl+], a
+	dec c
+	jr nz, .loop
+	dec b
+	ret z
+	jr .loop
+---
+
+--- Helper functions +=
+@{CopyMem16}
+---
