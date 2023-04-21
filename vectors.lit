@@ -98,7 +98,7 @@ Then, the interrupt vectors.
 	@{Joypad interrupt vector}
 ---
 
-I'll blank these out for now, as well. This time, we use `reti` to acknowledge that we're returning from an interrupt call.
+I'll blank these out for now, as well. This time, I use `reti` to acknowledge that I'm returning from an interrupt call.
 
 --- VBlank interrupt vector
 reti
