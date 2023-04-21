@@ -59,7 +59,7 @@ Then set it in our init routine:
 	ld sp, wStackTop
 ---
 
-Now why would the stack be `\$100`? Admittedly this is quite arbitrary, but there's a possibly good reason which you'll [see later](#8.1:8).
+Now why would the stack be `\$100` bytes long? Admittedly this is quite arbitrary, but there's a possibly good reason which you'll [see later](#8.1:8).
 
 @s Clearing HRAM
 
@@ -156,7 +156,7 @@ I'll kill the audio circuitry by zeroing out `NR52`. This has the [bonus effect]
 
 This is needed for manipulating sprites, since it's not possible to manipulate OAM directly. Instead, let the Game Boy itself do it though a DMA transfer from RAM to OAM. During this time, the CPU cannot access anything other than HRAM, so to ensure the CPU can go back to the ROM safely, I need to place this code *inside* HRAM, and run it from there.
 
-This also means that I need to make room for a "virtual OAM" inside of WRAM. This is what we update from within the program, instead of using the OAM memory region directly.
+This also means that I need to make room for a "virtual OAM" inside of WRAM. This is what I'll update from within the program, instead of using the OAM memory region directly.
 
 --- WRAM definitions +=
 wVirtualOAM:: ds 4*MAX_SPRITES
