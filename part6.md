@@ -62,7 +62,7 @@ Here's the first target I'll be writing. `$(ROM_NAME).gb` evaluates to `pong.gb`
 
 The command itself invokes the linker I defined previously, along with the configured link flags and `-fngb -cngb` for specifying that I'll be compiling with the Game Boy ROM configuration.
 
-I'll also be generating a """"symfile"""" (which it calls map files) with the same name as the ROM, will be outputting the target file (what the `$@` means) using whatever files are defined in `OBJ_FILES`
+I'll also be generating a &ldquo;&ldquo;&ldquo;&ldquo;symfile&rdquo;&rdquo;&rdquo;&rdquo; (which it calls map files) with the same name as the ROM, will be outputting the target file (what the `$@` means) using whatever files are defined in `OBJ_FILES`
 
 --- Targets
 $(ROM_NAME).gb: $(GFX_FILES) $(OBJ_FILES) include/*
