@@ -26,8 +26,6 @@
 
 <p>The format used here is for <a href="https://www.gnu.org/software/make/">GNU Make</a>.</p>
 
-<p>Normally, the file is simply titled literally <code>Makefile</code> (with no file extension), however due to the limitations of the markup system, I have to use a file extension. Make might not pick this up right away, so you should run <code>make -f Makefile.mk</code>.</p>
-
 <div class="code-block">
 <span class="block-header">
 <strong class="block-title"><em><a id="-src-makefile-block-453" href="#-src-makefile-block-453">/src/Makefile</a></em></strong></span>
@@ -106,7 +104,7 @@ GFX_FILES := \
 
 <p>The command itself invokes the linker I defined previously, along with the configured link flags and <code>-fngb -cngb</code> for specifying that I&rsquo;ll be compiling with the Game Boy ROM configuration.</p>
 
-<p>I&rsquo;ll also be generating a &ldquo;&rdquo;&ldquo;"symfile&rdquo;&ldquo;&rdquo;&ldquo; (which it calls map files) with the same name as the ROM, will be outputting the target file (what the <code>$@</code> means) using whatever files are defined in <code>OBJ_FILES</code></p>
+<p>I&rsquo;ll also be generating a &ldquo;&ldquo;&ldquo;&ldquo;symfile&rdquo;&rdquo;&rdquo;&rdquo; (which it calls map files) with the same name as the ROM, will be outputting the target file (what the <code>$@</code> means) using whatever files are defined in <code>OBJ_FILES</code></p>
 
 <div class="code-block">
 <span class="block-header">
