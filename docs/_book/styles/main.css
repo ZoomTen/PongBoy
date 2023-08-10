@@ -35,6 +35,7 @@ body {
 	line-height:1.5em;
 	max-width: 40em;
 	margin: 3em auto;
+	padding: 0 1em;
 	font-variant-numeric: oldstyle-nums;
 }
 
@@ -86,11 +87,11 @@ code, pre {
 pre {
 	background-color: #eee;
 	padding: 1em 1.5em;
+	overflow: auto;
 }
 
 .prettyprint {
 	margin: 0;
-	overflow: auto;
 }
 
 .code-block {
