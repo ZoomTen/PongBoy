@@ -1,0 +1,123 @@
+@font-face {
+	font-family: elstob;
+	font-display: swap;
+	src:
+		local("elstob"),
+		url("Elstob.woff2") format("woff2"),
+		url("Elstob.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: elstob;
+	font-style: oblique;
+	font-display: swap;
+	src:
+		local("elstob"),
+		url("Elstob-Italic.woff2") format("woff2"),
+		url("Elstob-Italic.ttf") format("truetype");
+}
+
+@font-face {
+	font-family: courprime;
+	font-display: swap;
+	src:
+		local("Courier Prime Code"),
+		url("Courier Prime Code.ttf") format("truetype");
+}
+
+body {
+	background-color: #fff;
+	color: #111;
+	font-family: elstob, serif;
+	font-size: 1.3em;
+	font-variation-settings: "opsz" 12, "GRAD" 0, "SPAC" 1, "slnt" 0, "onum" 1, "zero" 1, "tnum" 1;
+	font-weight: 500;
+	line-height:1.5em;
+	max-width: 40em;
+	margin: 3em auto;
+	font-variant-numeric: oldstyle-nums;
+}
+
+p {
+	margin: .5em 0;
+}
+
+h2 {
+	font-style: oblique;
+	font-variant-caps: small-caps;
+	letter-spacing: .075em;
+	font-size: 1.25em;
+	font-variation-settings: "opsz" 10;
+	font-weight: 500;
+}
+
+h1 {
+	text-align: center;
+	font-variation-settings: "opsz" 24;
+	font-variant-caps: small-caps;
+	font-weight: 500;
+	font-size: 1.5em;
+	letter-spacing: .075em;
+}
+
+p {
+	hyphens: auto;
+	text-align: justify;
+}
+
+a {
+	color: #600;
+}
+
+figure {
+	text-align: center;
+}
+
+figure img {
+	max-width: 75%;
+}
+
+code, pre {
+	font-size: 1.2rem;
+	line-height: 1.5rem;
+	font-family: courprime, monospace;
+}
+
+pre {
+	background-color: #eee;
+	padding: 1em 1.5em;
+}
+
+.prettyprint {
+	margin: 0;
+	overflow: auto;
+}
+
+.code-block {
+	margin-bottom: 1em;
+}
+
+.block-header {
+	background-color: #eee;
+	padding: .3em 1em;
+}
+
+.block-header a:target{
+	color: #000;
+	background-color: #ff0;
+}
+
+@media screen and (prefers-color-scheme: dark) {
+	body {
+		background-color: #222;
+		color: #fff;
+	}
+	a {
+		color: #ffa;
+	}
+
+	.block-header, pre {
+		background-color: #333;
+	}
+}
+

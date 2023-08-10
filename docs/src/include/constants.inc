@@ -1,15 +1,13 @@
-; src/include/constants.inc
 VRAM_START equ $8000
 SRAM_START equ $a000
 WRAM_START equ $c000
 ECHO_START equ $e000
 HRAM_START equ $ff80
 ; Game constants
-; Constants
+tiles equs "* $10"
 PADDLES_STARTING_Y equ $40
 BALL_STARTING_X equ $54
 BALL_STARTING_Y equ $50
-tiles equs "* $10"
 SPRITE_SLOT_LEFT_PADDLE equ 0
 LEFT_PADDLE_X equ 16
 sprite equs "+ 4*"
@@ -54,10 +52,6 @@ BALL_LOWER_BOUNDARY equ PADDLES_LOWER_BOUNDARY + (5*8)
 RIGHT_PLAYER_SERVES equ 0
 LEFT_PLAYER_SERVES  equ 1 << F_HORIZONTAL
 RIGHT_PADDLE_DELAY equ 1
-; Game mode constants
 GM_GAME equ 0
 GM_TITLE equ 1
-
-
 MAX_SPRITES equ 40
-

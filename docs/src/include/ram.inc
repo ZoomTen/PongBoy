@@ -1,6 +1,4 @@
-; src/include/ram.inc
 	section "wram", BSS[$c000]
-; WRAM definitions
 wStack:: ds $100 - 1
 wStackTop:: db
 wVirtualOAM:: ds 4*MAX_SPRITES
@@ -25,14 +23,10 @@ wAIMovementDelay:: db
 wAISetDelay:: db
 wShouldUpdateScore:: db
 
-
 	section "hram", HRAM
-; HRAM definitions
 hGBType:: db
 hDMACode:: ds 10
 hAskVBlank:: db
 hInput:: db
 hGameMode:: db
 hOldGameMode:: db
-
-
