@@ -8,8 +8,6 @@ This Makefile is basically the commands "recipe" needed to build the ROM out of 
 
 The format used here is for [GNU Make](https://www.gnu.org/software/make/).
 
-Normally, the file is simply titled literally `Makefile` (with no file extension), however due to the limitations of the markup system, I have to use a file extension. Make might not pick this up right away, so you should run `make -f Makefile.mk`. 
-
 --- /src/Makefile
 @{Phony targets}
 @{Tool configuration}
