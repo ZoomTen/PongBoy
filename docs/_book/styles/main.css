@@ -79,6 +79,7 @@ figure {
 }
 
 figure img {
+	max-width: 100%;
 	max-width: min(100%, 28em);
 }
 
