@@ -113,6 +113,12 @@ pre {
 	background-color: #ff0;
 }
 
+@media print {
+	body {
+		font-size: 12pt;
+	}
+}
+
 @media screen and (prefers-color-scheme: dark) {
 	body {
 		background-color: #222;
