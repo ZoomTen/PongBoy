@@ -22,21 +22,21 @@
 	font-display: swap;
 	src:
 		local("Courier Prime Code"),
-		url("Courier Prime Code.ttf") format("truetype");
+		url("Courier-Prime-Code.ttf") format("truetype");
 }
 
 body {
 	background-color: #fff;
 	color: #111;
 	font-family: elstob, serif;
-	font-size: 1.3em;
-	font-variation-settings: "opsz" 12, "GRAD" 0, "SPAC" 1, "slnt" 0, "onum" 1, "zero" 1, "tnum" 1;
+	font-size: 1.15em;
+	font-variation-settings: "opsz" 10, "GRAD" 0, "SPAC" 1, "slnt" 0, "onum" 1, "zero" 1, "tnum" 1, "ss18" 1;
 	font-weight: 500;
 	line-height:1.5em;
 	max-width: 40em;
 	margin: 3em auto;
 	padding: 0 1em;
-	font-variant-numeric: oldstyle-nums;
+	font-variant-numeric: oldstyle-nums slashed-zero;
 }
 
 p {
@@ -48,8 +48,12 @@ h2 {
 	font-variant-caps: small-caps;
 	letter-spacing: .075em;
 	font-size: 1.25em;
-	font-variation-settings: "opsz" 10;
+	font-variation-settings: "opsz" 16;
 	font-weight: 500;
+}
+
+h3 {
+	font-variation-settings: "opsz" 14;
 }
 
 h1 {
@@ -75,12 +79,12 @@ figure {
 }
 
 figure img {
-	max-width: 75%;
+	max-width: min(100%, 28em);
 }
 
 code, pre {
-	font-size: 1.2rem;
-	line-height: 1.5rem;
+	font-size: .9em;
+	line-height: 1.25em;
 	font-family: courprime, monospace;
 }
 
